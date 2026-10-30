@@ -1,5 +1,3 @@
-# Super Cat Mario & Custom Lives Editor
-
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -19,7 +17,6 @@
             align-items: center;
             justify-content: center;
             min-height: 95vh;
-
             user-select: none;
             -webkit-user-select: none;
         }
@@ -39,7 +36,6 @@
             max-width: 800px;
             background: #000;
             border: 4px solid #333;
-
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 10px 25px rgba(0,0,0,0.7);
@@ -59,7 +55,6 @@
 
         .hud-item {
             display: flex;
-
             align-items: center;
             gap: 5px;
         }
@@ -79,7 +74,6 @@
         }
         .mode-btn:active {
             transform: translateY(2px);
-
             box-shadow: 0 0 #b36b00;
         }
         .mode-btn.editor-active {
@@ -98,7 +92,6 @@
             justify-content: center;
             border-bottom: 2px solid #333;
         }
-
 
         .palette-group {
             display: flex;
@@ -119,7 +112,6 @@
             cursor: pointer;
             border-radius: 4px;
             display: flex;
-
             align-items: center;
             justify-content: center;
             min-width: 40px;
@@ -139,7 +131,6 @@
             background: #cc3333;
             color: white;
             border: none;
-
             padding: 6px 12px;
             font-family: inherit;
             font-weight: bold;
@@ -148,6 +139,12 @@
             font-size: 12px;
         }
         .action-btn:hover { background: #ee4444; }
+
+        #share-map-btn {
+            background: #33cc33;
+            color: #000;
+        }
+        #share-map-btn:hover { background: #44dd44; }
 
         #editor-scroll-bar {
             width: 100%;
@@ -159,7 +156,6 @@
             display: block;
             width: 100%;
             height: auto;
-
             background: #5c94fc; /* Klassiek Mario blauw */
             cursor: default;
         }
@@ -179,7 +175,6 @@
             z-index: 10;
             text-align: center;
             padding: 20px;
-
             box-sizing: border-box;
         }
 
@@ -200,7 +195,6 @@
             max-width: 500px;
         }
 
-
         .btn {
             background: #ffcc00;
             color: #000;
@@ -219,7 +213,6 @@
             transform: translateY(4px);
             box-shadow: 0 0 #cc9900;
         }
-
 
         /* Touch Bediening */
         #controls {
@@ -240,7 +233,6 @@
 
         .ctrl-btn {
             width: 65px;
-
             height: 65px;
             background: #2a2a30;
             border: 3px solid #444;
@@ -260,7 +252,6 @@
             transform: translateY(3px);
             box-shadow: 0 1px #1a1a20;
             background: #3a3a45;
-
         }
 
         #btn-jump {
@@ -280,12 +271,12 @@
         }
 
         #editor-msg {
-
             font-size: 11px;
             color: #aaa;
             text-align: center;
             width: 100%;
             margin-top: 4px;
+            transition: color 0.3s ease;
         }
 
         @media (max-width: 600px) {
@@ -300,7 +291,6 @@
     <h1>Super Cat Mario & Editor 🐾</h1>
 
     <div id="game-container">
-
         <!-- Top Statusbalk / Mode Selector -->
         <div id="top-bar">
             <div id="hud-view" class="hud-item">
@@ -320,7 +310,6 @@
                 <button class="tool-btn" data-tile="3" title="Krabpaal / Buis">🪵</button>
                 <button class="tool-btn" data-tile="4" title="Visje">🐟</button>
                 <button class="tool-btn" data-tile="5" title="Muis Muis">🐭</button>
-
                 <button class="tool-btn" data-tile="6" title="Gouden Mand Finish">🧺</button>
                 <button class="tool-btn" data-tile="7" title="Katten Startpunt">🐱</button>
                 <button class="tool-btn" data-tile="0" title="Wissen" style="color: #ff3333;">❌</button>
@@ -332,6 +321,7 @@
                 <input type="number" id="editor-lives-input" min="1" max="99" value="3" style="width: 45px; background: #333; color: #fff; border: 2px solid #555; padding: 4px; border-radius: 4px; text-align: center; font-family: inherit; font-weight: bold;">
             </div>
 
+            <button id="share-map-btn" class="action-btn">Deel Level 🔗</button>
             <button id="clear-map-btn" class="action-btn">Wis Alles</button>
             <button id="default-map-btn" class="action-btn" style="background: #555;">Herstel Origineel</button>
             
@@ -340,7 +330,6 @@
         </div>
 
         <!-- Het Speelveld -->
-
         <canvas id="gameCanvas"></canvas>
 
         <!-- Startscherm Overlay -->
@@ -360,7 +349,6 @@
         <!-- Overwinning Scherm Overlay -->
         <div id="win-screen" class="overlay hidden">
             <h2>Je Hebt Gewonnen! 🎉</h2>
-
             <p>Super! De kat zit heerlijk warm in de mand.</p>
             <p>Eindscore: <span id="final-score">0</span></p>
             <button class="btn" id="win-retry-btn">SPEEL OPNIEUW</button>
@@ -380,7 +368,6 @@
 
     <script>
         const canvas = document.getElementById('gameCanvas');
-
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('game-container');
 
@@ -394,13 +381,15 @@
         const GRID_ROWS = 14;
         const WORLD_WIDTH = GRID_COLS * TILE_SIZE;
 
+        // Compressie mapping array (0 t/m 7 vertaald naar letters a t/m h voor URL-vriendelijkheid)
+        const TILE_CHARS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
         // UI & Panels
         const scoreVal = document.getElementById('score-val');
         const fishVal = document.getElementById('fish-val');
         const livesVal = document.getElementById('lives-val');
         const finalScore = document.getElementById('final-score');
         
-
         const modeToggleBtn = document.getElementById('mode-toggle-btn');
         const editorPanel = document.getElementById('editor-panel');
         const hudView = document.getElementById('hud-view');
@@ -414,12 +403,11 @@
 
         // Game States: 'START', 'PLAYING', 'EDITOR', 'GAMEOVER', 'WIN'
         let gameState = 'START'; 
-        let isCustomLevel = false; // Registreert of we de editor-test spelen of het standaard level
+        let isCustomLevel = false; 
         let score = 0;
         let fishCount = 0;
-        let lives = 9; // Standaardwaarde start nu op 9
+        let lives = 9; 
         let cameraX = 0;
-
 
         let levelGrid = [];
 
@@ -440,7 +428,6 @@
                     osc.type = 'sine'; osc.frequency.setValueAtTime(550, audioCtx.currentTime);
                     osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.08);
                     gain.gain.setValueAtTime(0.06, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.18);
-
                 } else if (type === 'squash') {
                     osc.type = 'triangle'; osc.frequency.setValueAtTime(180, audioCtx.currentTime);
                     osc.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.1);
@@ -460,7 +447,6 @@
         let enemies = [];
         let goal = { x: -1000, y: -1000, w: 40, h: 50 };
         let clouds = [{x:100,y:60},{x:500,y:90},{x:900,y:50},{x:1400,y:70},{x:1900,y:60},{x:2300,y:90}];
-
         let startPoint = { x: 100, y: 300 };
 
         function clearGrid() {
@@ -481,7 +467,6 @@
             levelGrid[6][14] = 2; levelGrid[6][15] = 2; levelGrid[6][16] = 2;
             levelGrid[12][20] = 3; levelGrid[11][20] = 3;
 
-
             levelGrid[9][30] = 2; levelGrid[9][31] = 2;
             levelGrid[6][36] = 2; levelGrid[6][37] = 2;
             levelGrid[12][42] = 3; levelGrid[11][42] = 3; levelGrid[10][42] = 3;
@@ -496,12 +481,71 @@
             levelGrid[11][3] = 7;
         }
 
+        // Run-Length Encoding (RLE) Compressie om een compacte link te bouwen
+        function compressLevel() {
+            let flat = levelGrid.flat();
+            let compressed = '';
+            let currentTile = flat[0];
+            let count = 1;
+
+            for (let i = 1; i <= flat.length; i++) {
+                if (i < flat.length && flat[i] === currentTile) {
+                    count++;
+                } else {
+                    compressed += count + TILE_CHARS[currentTile];
+                    if (i < flat.length) {
+                        currentTile = flat[i];
+                        count = 1;
+                    }
+                }
+            }
+            let clives = document.getElementById('editor-lives-input').value;
+            return clives + 'v' + compressed;
+        }
+
+        // Decompressie om de gedeelde link in te laden
+        function decompressLevel(str) {
+            try {
+                let parts = str.split('v');
+                if (parts.length !== 2) return false;
+                
+                let clives = parseInt(parts[0]);
+                document.getElementById('editor-lives-input').value = isNaN(clives) ? 3 : clives;
+
+                let data = parts[1];
+                let flat = [];
+                let reg = /(\d+)([a-h])/g;
+                let match;
+
+                while ((match = reg.exec(data)) !== null) {
+                    let count = parseInt(match[1]);
+                    let tileChar = match[2];
+                    let tileType = TILE_CHARS.indexOf(tileChar);
+                    
+                    for (let i = 0; i < count; i++) {
+                        flat.push(tileType);
+                    }
+                }
+
+                if (flat.length !== GRID_ROWS * GRID_COLS) return false;
+
+                let index = 0;
+                for (let r = 0; r < GRID_ROWS; r++) {
+                    for (let c = 0; c < GRID_COLS; c++) {
+                        levelGrid[r][c] = flat[index++];
+                    }
+                }
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
         function compileGridToEntities() {
             platforms = [];
             fishes = [];
             enemies = [];
             goal = { x: -1000, y: -1000, w: 40, h: 50 };
-
             startPoint = { x: 100, y: 300 };
 
             for (let r = 0; r < GRID_ROWS; r++) {
@@ -521,7 +565,6 @@
                     } else if (tile === 5) {
                         enemies.push({ x: tx, y: ty + 12, w: 30, h: 20, vx: -1.5, minX: tx - 64, maxX: tx + 64, dead: false });
                     } else if (tile === 6) {
-
                         goal = { x: tx, y: ty - 8, w: 40, h: 40 };
                     } else if (tile === 7) {
                         startPoint = { x: tx, y: ty };
@@ -541,15 +584,13 @@
             
             if(gameState === 'PLAYING') {
                 score = 0;
-
                 fishCount = 0;
                 
-                // Bepaal het aantal levens op basis van de modus
                 if (isCustomLevel) {
                     const inputVal = parseInt(document.getElementById('editor-lives-input').value);
                     lives = isNaN(inputVal) || inputVal < 1 ? 3 : inputVal;
                 } else {
-                    lives = 9; // Standaardlevels starten altijd met 9 levens
+                    lives = 9; 
                 }
                 
                 updateHUD();
@@ -562,7 +603,6 @@
             livesVal.textContent = lives;
         }
 
-
         // Active Tile Type Palette Selector
         let selectedTileType = 1; 
         const toolBtns = document.querySelectorAll('.tool-btn');
@@ -574,6 +614,27 @@
             });
         });
 
+        // Share Link Kopiëren via Klembord (execCommand Fallback Guardrail)
+        document.getElementById('share-map-btn').addEventListener('click', () => {
+            let code = compressLevel();
+            let shareUrl = window.location.origin + window.location.pathname + '#level=' + code;
+            
+            let tempInput = document.createElement('input');
+            tempInput.value = shareUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            let msg = document.getElementById('editor-msg');
+            msg.textContent = "Link gekopieerd! Deel deze URL met je vrienden! 🎉";
+            msg.style.color = "#33cc33";
+            setTimeout(() => {
+                msg.textContent = "Klik of sleep op het raster hieronder om elementen te tekenen.";
+                msg.style.color = "#aaa";
+            }, 4000);
+        });
+
         document.getElementById('clear-map-btn').addEventListener('click', () => { clearGrid(); resetGameplaySession(); });
         document.getElementById('default-map-btn').addEventListener('click', () => { loadDefaultGrid(); resetGameplaySession(); });
         editorScrollBar.addEventListener('input', (e) => { cameraX = parseInt(e.target.value); });
@@ -582,9 +643,8 @@
         modeToggleBtn.addEventListener('click', () => {
             initAudio();
             if (gameState === 'EDITOR') {
-
                 gameState = 'PLAYING';
-                isCustomLevel = true; // Activeer de aangepaste editor instellingen
+                isCustomLevel = true; 
                 modeToggleBtn.textContent = 'Naar Editor 🛠️';
                 modeToggleBtn.classList.remove('editor-active');
                 editorPanel.classList.add('hidden');
@@ -602,7 +662,6 @@
                 controlsDiv.classList.add('hidden');
                 startScreen.classList.add('hidden');
                 gameoverScreen.classList.add('hidden');
-
                 winScreen.classList.add('hidden');
                 compileGridToEntities();
             }
@@ -622,7 +681,6 @@
         const keys = { left: false, right: false, jump: false };
         window.addEventListener('keydown', (e) => {
             if (gameState !== 'PLAYING') return;
-
             if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
             if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
             if (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'w' || e.key === 'W') keys.jump = true;
@@ -642,7 +700,6 @@
             el.addEventListener('mouseup', () => keys[prop]=false);
             el.addEventListener('mouseleave', () => keys[prop]=false);
         }
-
         bindTouch('btn-left', 'left'); bindTouch('btn-right', 'right'); bindTouch('btn-jump', 'jump');
 
         // Mouse Painting Raster Logica
@@ -662,7 +719,6 @@
                     for(let r=0; r<GRID_ROWS; r++) {
                         for(let c=0; c<GRID_COLS; c++) {
                             if(levelGrid[r][c] === selectedTileType) levelGrid[r][c] = 0;
-
                         }
                     }
                 }
@@ -678,10 +734,9 @@
             return r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y;
         }
 
-        // Real-time Physics & Rekencyclus Update
+        // Real-time Physics Update
         function update() {
             if (gameState !== 'PLAYING') return;
-
 
             if (player.hurtTimer > 0) player.hurtTimer--;
 
@@ -702,7 +757,6 @@
                     if (player.vx > 0 && player.x + player.w - player.vx <= p.x) player.x = p.x - player.w;
                     else if (player.vx < 0 && player.x - player.vx >= p.x + p.w) player.x = p.x + p.w;
                 }
-
             });
 
             player.y += player.vy;
@@ -721,7 +775,6 @@
             if (keys.jump && player.grounded) { player.vy = player.jumpForce; player.grounded = false; playSound('jump'); }
 
             if (player.y > VIRTUAL_HEIGHT) handlePlayerHurt();
-
 
             fishes.forEach(f => {
                 if (!f.collected && checkCollision(player, { x: f.x, y: f.y, w: 20, h: 20 })) {
@@ -743,7 +796,6 @@
                 }
             });
 
-
             if (checkCollision(player, goal)) {
                 gameState = 'WIN'; finalScore.textContent = score; winScreen.classList.remove('hidden');
             }
@@ -764,7 +816,6 @@
             }
         }
 
-
         // Render Canvas Engine
         function draw() {
             ctx.save();
@@ -784,7 +835,6 @@
             });
 
             platforms.forEach(p => {
-
                 if (p.type === 'ground') {
                     ctx.fillStyle = '#d88038'; ctx.fillRect(p.x, p.y, p.w, p.h);
                     ctx.fillStyle = '#00a800'; ctx.fillRect(p.x, p.y, p.w, 6);
@@ -804,7 +854,6 @@
                 if (!e.dead) {
                     ctx.save();
                     if (e.vx > 0) { ctx.translate(e.x + e.w/2, e.y + e.h/2); ctx.scale(-1, 1); ctx.fillText('🐭', -e.w/2, -e.h/2 - 4); }
-
                     else { ctx.fillText('🐭', e.x, e.y - 4); }
                     ctx.restore();
                 }
@@ -820,11 +869,10 @@
                 for (let c = Math.floor(cameraX/TILE_SIZE); c <= Math.ceil((cameraX+VIRTUAL_WIDTH)/TILE_SIZE); c++) {
                     ctx.beginPath(); ctx.moveTo(c * TILE_SIZE, 0); ctx.lineTo(c * TILE_SIZE, VIRTUAL_HEIGHT); ctx.stroke();
                 }
-                ctx.getAlpha = 0.4; ctx.font = '24px Arial'; ctx.fillText('🐱', startPoint.x, startPoint.y); ctx.globalAlpha = 1.0;
+                ctx.globalAlpha = 0.4; ctx.font = '24px Arial'; ctx.fillText('🐱', startPoint.x, startPoint.y); ctx.globalAlpha = 1.0;
             }
 
             if (gameState !== 'EDITOR' && (player.hurtTimer === 0 || Math.floor(player.hurtTimer / 4) % 2 === 0)) {
-
                 ctx.save(); ctx.font = '24px Arial';
                 if (player.facingLeft) { ctx.translate(player.x + player.w/2, player.y + player.h/2); ctx.scale(-1, 1); ctx.fillText('🐱', -player.w/2, -player.h/2 - 2); }
                 else { ctx.fillText('🐱', player.x, player.y - 2); }
@@ -832,6 +880,25 @@
             }
 
             ctx.restore();
+        }
+
+        // Check binnenkomende deellink via URL Hash fragmenten
+        function checkIncomingShareLink() {
+            let hash = window.location.hash;
+            if (hash.startsWith('#level=')) {
+                let code = hash.replace('#level=', '');
+                let success = decompressLevel(code);
+                if (success) {
+                    isCustomLevel = true;
+                    gameState = 'PLAYING';
+                    startScreen.classList.add('hidden');
+                    resetGameplaySession();
+                    
+                    let msg = document.getElementById('editor-msg');
+                    msg.textContent = "Gedeeld level succesvol ingeladen! 🎮";
+                    setTimeout(() => { msg.textContent = "Klik of sleep op het raster hieronder om elementen te tekenen."; }, 4000);
+                }
+            }
         }
 
         function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
@@ -844,7 +911,6 @@
             resetGameplaySession(); 
             startScreen.classList.add('hidden'); 
         });
-
         
         document.getElementById('retry-btn').addEventListener('click', () => { 
             gameState = 'PLAYING'; 
@@ -858,9 +924,9 @@
             winScreen.classList.add('hidden'); 
         });
 
+        // Eerst controleren op een gedeelde link, start daarna de loop
+        checkIncomingShareLink();
         requestAnimationFrame(gameLoop);
     </script>
 </body>
 </html>
-
-
